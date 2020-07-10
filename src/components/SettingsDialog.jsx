@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Button, Grid, TextField, Dialog, DialogActions, DialogContent, DialogTitle} from '@material-ui/core';
+import { Button, Grid, TextField, Dialog, DialogActions, DialogContent, DialogTitle } from '@material-ui/core';
 import SettingsRoundedIcon from '@material-ui/icons/SettingsRounded';
 
 class SettingsDialog extends React.Component {
@@ -11,8 +11,12 @@ class SettingsDialog extends React.Component {
             open: false,
             hihiError: false,
             highError: false,
-            hihiVal: props.hihi,
-            highVal: props.high
+            hihiVal: props.hihi.toExponential(1),
+            highVal: props.high.toExponential(1),
+            topLimErr: false,
+            botLimErr: false,
+            topLim: props.topLim.toExponential(1),
+            botLim: props.botLim.toExponential(1),
         };
 
     }
@@ -39,10 +43,24 @@ class SettingsDialog extends React.Component {
         });
     };
 
+    handleLimit = (top, bot) => {
+        this.setState((state, props) => {
+            if (top == null) { top = state.topLim; }
+            if (bot == null) { bot = state.botLim; }
+            const err = (parseFloat(bot) >= parseFloat(top));
+            return {
+                botLim: bot,
+                topLim: top,
+                botLimErr: isNaN(bot) || bot === '' || err,
+                topLimErr: isNaN(top) || top === '' || err,
+            }
+        });
+    }
+
     render() {
         return (
             <div>
-                <Button startIcon={<SettingsRoundedIcon/>} size='small' style={{ margin: '2px' }} variant="contained" color="primary" onClick={this.handleClickOpen}> Settings
+                <Button startIcon={<SettingsRoundedIcon />} size='small' style={{ margin: '2px' }} variant="contained" color="primary" onClick={this.handleClickOpen}> Settings
             </Button>
                 <Dialog open={this.state.open} onClose={this.handleClose}
                     aria-labelledby="alert-dialog-title"
@@ -55,7 +73,6 @@ class SettingsDialog extends React.Component {
                             justify="center"
                             alignItems="center"
                         >
-
                             <TextField
                                 style={{ padding: '5px' }}
                                 error={this.state.hihiError}
@@ -73,6 +90,24 @@ class SettingsDialog extends React.Component {
                                 onChange={(evt) => this.handleAlarmState(evt.target.value, null)}
                             />
 
+                            <TextField
+                                style={{ padding: '5px' }}
+                                error={this.state.topLimErr}
+                                label="Top Limit"
+                                defaultValue={this.props.topLim}
+                                value={this.state.topLim}
+                                onChange={(evt) => this.handleLimit(evt.target.value, null)}
+                            />
+
+                            <TextField
+                                style={{ padding: '5px' }}
+                                error={this.state.botLimErr}
+                                label="Bot Limit"
+                                defaultValue={this.props.botLim}
+                                value={this.state.botLim}
+                                onChange={(evt) => this.handleLimit(null, evt.target.value)}
+                            />
+
                         </Grid>
                     </DialogContent>
                     <DialogActions>
@@ -81,9 +116,16 @@ class SettingsDialog extends React.Component {
                                 if (!this.state.highError && !this.state.hihiError) {
                                     this.props.handleConfig(
                                         this.state.hihiVal ? this.state.hihiVal : this.props.hihi,
-                                        this.state.highVal ? this.state.highVal : this.props.high);
-                                    this.handleClose();
+                                        this.state.highVal ? this.state.highVal : this.props.high,
+                                    );
                                 }
+                                if (!this.state.topLimErr && !this.state.botLimErr) {
+                                    this.props.handleConfigLimits(
+                                        this.state.topLim ? this.state.topLim : this.props.topLim,
+                                        this.state.botLim ? this.state.botLim : this.props.botLim,
+                                    );
+                                }
+                                this.handleClose();
                             }}
                             variant="contained" color="primary">OK</Button>
                         <Button onClick={() => { this.handleClose() }} variant="contained" color="secondary">Close</Button>
